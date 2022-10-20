@@ -35,6 +35,8 @@ from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
 
+torch.cuda.empty_cache()
+
 logger = logging.getLogger(__name__)
 
 
@@ -63,7 +65,7 @@ def train(hyp, opt, device, tb_writer=None):
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     is_coco = opt.data.endswith('coco.yaml')
-
+    
     # Logging- Doing this before checking the dataset. Might update data_dict
     loggers = {'wandb': None}  # loggers dict
     if rank in [-1, 0]:
@@ -93,8 +95,16 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
         model = Model(opt.cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+    print("data_dict: ", data_dict)
+    # data_dict:  {'train': "r'data//bdd100k//images//train'", 
+    #                'val': "r'data//bdd100k//images//val'", 
+    #               'test': "r'data//bdd100k//images//val'", 
+    #                 'nc': 10, 
+    #              'names': ['person', 'rider', 'car', 'bus', 'truck', 'bike', 'motor', 'traffic light', 'traffic sign', 'train']}
+
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
+
     train_path = data_dict['train']
     test_path = data_dict['val']
 
