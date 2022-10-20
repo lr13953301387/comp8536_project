@@ -35,7 +35,7 @@ help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
 logger = logging.getLogger(__name__)
-
+os.chdir('/content/drive/MyDrive/comp8536_project')
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
     if ExifTags.TAGS[orientation] == 'Orientation':
@@ -380,6 +380,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
             self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats])
+            self.img_files = [x.replace("\\","/") if "\\" in str(x) else x for x in self.img_files  ]
+            # print("383 self.img_files[0]：", self.img_files[0])
+            # print("383 self.img_files 长度：", len(self.img_files))
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in img_formats])  # pathlib
             assert self.img_files, f'{prefix}No images found'
         except Exception as e:
@@ -444,7 +447,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     shapes[i] = [1, 1 / mini]
 
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(np.int) * stride
-
+        self.img_files = [x.replace("\\","/") if "\\" in str(x) else x for x in self.img_files  ]
+        # print("451 self.img_files[0]: ", self.img_files[0])
+        # print("451 self.img_files len: ", len(self.img_files))
         # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
         self.imgs = [None] * n
         if cache_images:
@@ -666,8 +671,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 def load_image(self, index):
     # loads 1 image from dataset, returns img, original hw, resized hw
     img = self.imgs[index]
+    # print("673 img_files: ",self.img_files)
     if img is None:  # not cached
         path = self.img_files[index]
+        # print("676 index: ",index)
+        # print("676 len(self.img_files): " ,len(self.img_files))
+        # print("676 self.img_files[index]: ",self.img_files[index])
         img = cv2.imread(path)  # BGR
         assert img is not None, 'Image Not Found ' + path
         h0, w0 = img.shape[:2]  # orig hw
